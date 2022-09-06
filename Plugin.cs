@@ -2,8 +2,13 @@
 using DiscordMessenger;
 using System;
 using HarmonyLib;
-using static Skills;
 using BepInEx.Configuration;
+using UnityEngine;
+using System.IO;
+using Newtonsoft.Json;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
+using System.Linq;
 
 namespace DiscordSkillTracker
 {
@@ -24,9 +29,30 @@ namespace DiscordSkillTracker
         static string botAvatar1 = "https://thumbs.dreamstime.com/b/scandinavian-viking-design-ancient-decorative-dragon-celtic-style-knot-work-illustration-northern-runes-vector-214616877.jpg";
         static string botName1 = "Odinbot";
 
+        static string jsonStringLocal;
+
         private void Awake()
         {
             harmony.PatchAll();
+            LoadJson();
+        }
+
+        public static string RemoveSpecialChars(string str)
+        {
+            string[] chars = new string[] { "'", "\"", ":", " "};
+            for (int i = 0; i < chars.Length; i++)
+            {
+                if (str.Contains(chars[i])) {str = str.Replace(chars[i], "");}
+            }
+            return str;
+        }
+
+        public void LoadJson()
+        {
+            StreamReader r = new StreamReader("BepInEx/plugins/DiscordSkillTracker/moddedSkills.json");
+            string jsonString = r.ReadToEnd();
+            jsonStringLocal = jsonString;
+            Logger.LogInfo($"JSON LOADED XX");
         }
 
         [HarmonyPatch(typeof(Player), nameof(Player.OnSkillLevelup))]
@@ -36,14 +62,23 @@ namespace DiscordSkillTracker
             {
                 var playerName = __instance.GetPlayerName();
                 var skillName = skill.ToString();
-
-                if (skillName == "1555733581") { skillName = "Gathering"; }
-                if (skillName == "1408976878") { skillName = "Mining"; }
-                if (skillName == "184859086") { skillName = "Cooking"; }
-                if (skillName == "1363793286") { skillName = "Lumberjacking"; }
-                
                 var skillLevel = (float)Math.Floor(level);
 
+                // Check if skillname is a digit
+                if (skillName.All(char.IsDigit))
+                {
+                    dynamic array = JsonConvert.DeserializeObject(jsonStringLocal);
+                    foreach (var item in array)
+                    {
+                        string[] words = item.ToString().Split(':');
+                        string _a = RemoveSpecialChars(words[0]);
+                        string _b = RemoveSpecialChars(words[1]);
+
+                        if (skillName == _a) {skillName = _b;}
+                    }
+                }
+
+                // Send message to discord
                 new DiscordMessage()
                     .SetUsername(botName1)
                     .SetAvatar(botAvatar1)
@@ -57,6 +92,5 @@ namespace DiscordSkillTracker
                         .SendMessage(webhookAddress1);
             }
         }
-
     }
 }
