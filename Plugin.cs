@@ -7,7 +7,6 @@ using System.IO;
 using Newtonsoft.Json;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Collections.Generic;
 using ServerSync;
 using System.Reflection;
 
@@ -25,8 +24,8 @@ namespace DiscordSkillTracker
         private const string PluginName = "DiscordSkillTracker";
         private const string PluginVersion = "0.1.2";
 
-        private static readonly ConfigSync configSync = new(PluginGUID)
-        { DisplayName = PluginName, CurrentVersion = PluginVersion, MinimumRequiredVersion = PluginVersion };
+        //private static readonly ConfigSync configSync = new(PluginGUID)
+        //{ DisplayName = PluginName, CurrentVersion = PluginVersion, MinimumRequiredVersion = PluginVersion };
 
         Harmony harmony = new(PluginGUID);
 
@@ -38,8 +37,6 @@ namespace DiscordSkillTracker
         private static ConfigEntry<string> botName = null!;
 
         //static string webhookAddress1 = "https://discord.com/api/webhooks/1016088172339396629/rihfgzKDBcI7i_bKsiA5GUeJ34FnOMTZlxZ6Wj7Obqv7sBKdJzpW19AdEyTjn2szU84T";
-        static string botAvatar1 = "https://thumbs.dreamstime.com/b/scandinavian-viking-design-ancient-decorative-dragon-celtic-style-knot-work-illustration-northern-runes-vector-214616877.jpg";
-        static string botName1 = "The Watcher";
 
         private static dynamic customSkillList;
 
@@ -71,8 +68,11 @@ namespace DiscordSkillTracker
 
         private void OnDestroy()
         {
+            Logger.LogInfo($"XXXXXXXXXXXXXXXXXXXXXXX DESTROYED");
             Config.Save();
+            Logger.LogInfo($"XXXXXXXXXXXXXXXXXXXXXXXX CONFIG SAVED");
             harmony.UnpatchSelf();
+            Logger.LogInfo($"XXXXXXXXXXXXXXXXXXXXXXXXX  UNPATCHED");
         }
 
 
@@ -85,15 +85,15 @@ namespace DiscordSkillTracker
             string extendedDescription = GetExtendedDescription(description, synced);
             configEntry = Config.Bind(section, key, value, extendedDescription);
 
-            SyncedConfigEntry<T> syncedConfigEntry = configSync.AddConfigEntry(configEntry);
-            syncedConfigEntry.SynchronizedConfig = synced;
+            //SyncedConfigEntry<T> syncedConfigEntry = configSync.AddConfigEntry(configEntry);
+            //syncedConfigEntry.SynchronizedConfig = synced;
         }
 
         public string GetExtendedDescription(string description, bool synchronizedSetting)
         {
             return description + (synchronizedSetting ? " [Synced with Server]" : " [Not Synced with Server]");
         }
-
+        
         private void SetupWatcher()
         {
             FileSystemWatcher watcher = new(Paths.ConfigPath, ConfigFileName);
@@ -110,12 +110,20 @@ namespace DiscordSkillTracker
             if (!File.Exists(ConfigFileFullPath)) return;
             try
             {
+                Logger.LogInfo($"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
+                Logger.LogInfo($"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
                 Logger.LogInfo("SkillAlert Reloading Config!");
+                Logger.LogInfo($"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
+                Logger.LogInfo($"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
                 Config.Reload();
             }
             catch
             {
+                Logger.LogInfo($"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
+                Logger.LogInfo($"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
                 Logger.LogError("SkillAlert Reloading Config FAILED!!");
+                Logger.LogInfo($"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
+                Logger.LogInfo($"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
             }
         }
 
@@ -129,10 +137,10 @@ namespace DiscordSkillTracker
             string jsonString = r.ReadToEnd();
             customSkillList = JsonConvert.DeserializeObject(jsonString);
             Logger.LogInfo($"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
-            Logger.LogInfo($"XXX                                                       XXX");
-            Logger.LogInfo($"XXX                  DiscordSkillTracker                  XXX");
-            Logger.LogInfo($"XXX                    Loaded!  v0.0.2                    XXX");
-            Logger.LogInfo($"XXX                                                       XXX");
+            Logger.LogInfo($"XXX                                                          ");
+            Logger.LogInfo($"XXX                  DiscordSkillTracker                     ");
+            Logger.LogInfo($"XXX                    Loaded!  v{PluginVersion}             ");
+            Logger.LogInfo($"XXX                                                          ");
             Logger.LogInfo($"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
         }
 
@@ -161,8 +169,8 @@ namespace DiscordSkillTracker
                 else { rnk = "Novice"; col = 16776960; }
 
                 new DiscordMessage()
-                    .SetUsername(botName1)
-                    .SetAvatar(botAvatar1)
+                    .SetUsername(botName.Value)
+                    .SetAvatar(botAvatar.Value)
                     .AddEmbed()
                         .SetTimestamp(DateTime.Now)
                         .SetTitle("Skill Increase!")
@@ -172,6 +180,7 @@ namespace DiscordSkillTracker
                         .Build()
                         .SendMessage(webhookAddress.Value);
                 Task.Delay(100).Wait();
+
             });
         }
 
