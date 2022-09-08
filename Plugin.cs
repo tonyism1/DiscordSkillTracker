@@ -7,10 +7,8 @@ using System.IO;
 using Newtonsoft.Json;
 using System.Linq;
 using System.Threading.Tasks;
-using ServerSync;
 using System.Reflection;
 
-// TESTING PUSH
 
 namespace DiscordSkillTracker
 {
@@ -22,12 +20,9 @@ namespace DiscordSkillTracker
 
         private const string PluginGUID = "com.tonyism1.discordSkillTracker";
         private const string PluginName = "DiscordSkillTracker";
-        private const string PluginVersion = "0.1.2";
+        private const string PluginVersion = "1.0.0";
 
-        //private static readonly ConfigSync configSync = new(PluginGUID)
-        //{ DisplayName = PluginName, CurrentVersion = PluginVersion, MinimumRequiredVersion = PluginVersion };
-
-        Harmony harmony = new(PluginGUID);
+        private static Harmony harmony = new(PluginGUID);
 
         private static string ConfigFileName = PluginGUID + ".cfg";
         private static string ConfigFileFullPath = Paths.ConfigPath + Path.DirectorySeparatorChar + ConfigFileName;
@@ -36,13 +31,8 @@ namespace DiscordSkillTracker
         private static ConfigEntry<string> botAvatar = null!;
         private static ConfigEntry<string> botName = null!;
 
-        //static string webhookAddress1 = "https://discord.com/api/webhooks/1016088172339396629/rihfgzKDBcI7i_bKsiA5GUeJ34FnOMTZlxZ6Wj7Obqv7sBKdJzpW19AdEyTjn2szU84T";
-
         private static dynamic customSkillList;
 
-        /// <summary>
-        /// 
-        /// </summary>
 
 
         private void Awake()
@@ -51,48 +41,43 @@ namespace DiscordSkillTracker
 
             #region Configuration
 
-            AddConfig("webhookAddress", "General", "webhookAddress",
+            AddConfig("Webhook URL:", "General", "webhookAddresss",
                 true, " ", ref webhookAddress);
-            AddConfig("botAvatar", "General", "botAvatar",
+            AddConfig("Bot Avatar URL:", "General", "botAvatar",
                 true, " ", ref botAvatar);
-            AddConfig("botName", "General", "botName",
+            AddConfig("Bot Name:", "General", "botName",
                 true, " ", ref botName);
 
             #endregion
-            //if(botName.Value == null) { botName.Value = "The Watcher"; }
 
             Assembly assembly = Assembly.GetExecutingAssembly();
             harmony.PatchAll(assembly);
             SetupWatcher();
+
+            Logger.LogInfo($"       XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
+            Logger.LogInfo($"       XXX                                                          ");
+            Logger.LogInfo($"       XXX                  DiscordSkillTracker                     ");
+            Logger.LogInfo($"       XXX                    Loaded!  v{PluginVersion}             ");
+            Logger.LogInfo($"       XXX                                                          ");
+            Logger.LogInfo($"       XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
         }
 
         private void OnDestroy()
         {
-            Logger.LogInfo($"XXXXXXXXXXXXXXXXXXXXXXX DESTROYED");
             Config.Save();
-            Logger.LogInfo($"XXXXXXXXXXXXXXXXXXXXXXXX CONFIG SAVED");
             harmony.UnpatchSelf();
-            Logger.LogInfo($"XXXXXXXXXXXXXXXXXXXXXXXXX  UNPATCHED");
         }
 
 
-        /// <summary>
-        /// 
-        /// </summary>
+
 
         private void AddConfig<T>(string key, string section, string description, bool synced, T value, ref ConfigEntry<T> configEntry)
         {
             string extendedDescription = GetExtendedDescription(description, synced);
             configEntry = Config.Bind(section, key, value, extendedDescription);
-
-            //SyncedConfigEntry<T> syncedConfigEntry = configSync.AddConfigEntry(configEntry);
-            //syncedConfigEntry.SynchronizedConfig = synced;
         }
 
-        public string GetExtendedDescription(string description, bool synchronizedSetting)
-        {
-            return description + (synchronizedSetting ? " [Synced with Server]" : " [Not Synced with Server]");
-        }
+        public string GetExtendedDescription(string description, bool synchronizedSetting) { return description + (synchronizedSetting ? " [Synced with Server]" : " [Not Synced with Server]"); }
         
         private void SetupWatcher()
         {
@@ -110,38 +95,24 @@ namespace DiscordSkillTracker
             if (!File.Exists(ConfigFileFullPath)) return;
             try
             {
-                Logger.LogInfo($"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
-                Logger.LogInfo($"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
-                Logger.LogInfo("SkillAlert Reloading Config!");
-                Logger.LogInfo($"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
-                Logger.LogInfo($"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
+                Logger.LogInfo("    -->  Discord Skill Tracker is reloading the config file!");
                 Config.Reload();
+                Logger.LogInfo("    -->  Reload successful!");
             }
             catch
             {
-                Logger.LogInfo($"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
-                Logger.LogInfo($"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
-                Logger.LogError("SkillAlert Reloading Config FAILED!!");
-                Logger.LogInfo($"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
-                Logger.LogInfo($"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
+                Logger.LogError("    -->  Discord Skill Tracker could not reload config file!");
             }
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
+
 
         public void loadJson()
         {
             StreamReader r = new StreamReader("BepInEx/plugins/DiscordSkillTracker/customSkills.json");
             string jsonString = r.ReadToEnd();
             customSkillList = JsonConvert.DeserializeObject(jsonString);
-            Logger.LogInfo($"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
-            Logger.LogInfo($"XXX                                                          ");
-            Logger.LogInfo($"XXX                  DiscordSkillTracker                     ");
-            Logger.LogInfo($"XXX                    Loaded!  v{PluginVersion}             ");
-            Logger.LogInfo($"XXX                                                          ");
-            Logger.LogInfo($"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
+            Logger.LogInfo("    -->  Discord Skill Tracker has loaded 'customSkills.json' !");
         }
 
         public static string stripChars(string str)
@@ -158,7 +129,7 @@ namespace DiscordSkillTracker
         {
             await Task.Run(() =>
             {
-                // Send message to discord
+
                 var rnk = "";
                 int col = 2303786;
                 if (skl > 90) { rnk = "Master"; col = 15277667; }
@@ -198,6 +169,7 @@ namespace DiscordSkillTracker
                 var playerName = __instance.GetPlayerName();
                 var skillName = skill.ToString();
                 var skillLevel = (float)Math.Floor(level);
+
                 // Check if skillname is a digit
                 if (skillName.All(char.IsDigit))
                 {
@@ -210,7 +182,7 @@ namespace DiscordSkillTracker
                         if (skillName == _id) { skillName = _name; break; }
                     }
                 }
-                //pushDiscord(playerName, skillName, skillLevel);
+
                 pushDiscord(playerName, skillName, skillLevel).ConfigureAwait(false);
             }
         }
